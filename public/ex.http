@@ -1,0 +1,11 @@
+POST http://api.crap.cn/visitor/example/json.do
+content-type: application/json
+
+// 這裡有一個空行，分隔標頭和 body
+
+{
+"id":"8989-dddvdg",
+"name":"文章标题-JSON格式参数演示",
+"brief":"快速入门json参数",
+"category":"分类"
+}

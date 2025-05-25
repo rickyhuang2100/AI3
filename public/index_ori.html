@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drive Markdown to Gemini</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
+
+  <style>
+    /* 你可以在這裡加入一些 CSS 樣式來美化介面 */
+    body {
+      font-family: sans-serif;
+      line-height: 1.6;
+      margin: 20px;
+    }
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .prompt-box {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .prompt-box input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+    .prompt-box button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .prompt-box button:hover {
+      background-color: #0056b3;
+    }
+    .output {
+      border: 1px solid #ccc;
+      padding: 15px;
+      min-height: 100px;
+      white-space: pre-wrap; /* 保留換行符號 */
+    }
+  </style>
+</head>
+<body>
+  <h1>Google Drive 知識庫查詢</h1>
+  <button onclick="handleSignIn()">登入 Google</button>
+  輸入資料夾 ID<input id="folderIdInput" placeholder="輸入資料夾 ID" size="50">
+  <button onclick="process()">取得資料</button>
+  <textarea id="messageInput" placeholder="Type your message here..." rows="5" cols="40" ></textarea>
+API Key <input type="password" id="apiKey" placeholder="API Key" />
+<button onclick="sendMessage()">送出</button>
+  <input id="userQuestion" style="display: none;" placeholder="輸入你的問題" size="50">
+  <br/>
+  
+  <div class="inputs">
+    
+
+    
+</div>
+  <p class="output" id="answer" style="display: none;">(AI 的回答會顯示在這裡)</p> 
+  
+  <pre id="output" style="display: none;"></pre>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js
+  "></script>
+          <style>
+              * {
+                  padding: 0;
+                  margin: 0;
+                  box-sizing: border-box;
+              }
+              body {
+                  font-family: system-ui, -apple-system, BlinkMacSystemFont,
+                      "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
+                      "Helvetica Neue", sans-serif;
+                  padding: 2rem;
+                  display: flex;
+                  flex-direction: column;
+                  height: 100dvh;
+              }
+              #chatHistory {
+                  /*flex-grow: 1;*/
+              }
+              .inputs {
+                  display: flex;
+              }
+              #messageInput {
+                  flex-grow: 1;
+              }
+              .inputs > * {
+                  height: 2rem;
+                  padding: 0.5rem;
+              }
+              #chatHistory > div {
+                  margin-top: 1rem;
+              }
+          </style>
+        <h1>Gemini 問答</h1>
+                <div id="chatHistory" style="width: 100%; height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+                    <!-- Chat history will appear here -->
+                </div>
+                
+                <script>
+                    const converter = new showdown.Converter();
+                    let thread = [];
+                    function sendMessage() {
+                        var apiKey = document.getElementById("apiKey").value;
+                        const message = document.getElementById("messageInput").value;
+                        thread.push({
+                            role: "user",
+                            parts: [{ text: message }],
+                        });
+                        console.log(apiKey);
+                        fetch(
+                            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
+                                apiKey,
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                    contents: thread,
+                                }),
+                            }
+                        )
+                            .then(response => response.json())
+                            .then(data => {
+                                const msg = data.candidates[0].content.parts[0].text;
+                                const message = document.getElementById("messageInput").value;
+                                document.getElementById("chatHistory").innerHTML +=
+                                    "<div><div class='author'>AI:</div>" +
+                                    converter.makeHtml(msg) + "<br/>You:<br/>" + message
+                                    "</div>";
+                                    
+                                thread.push({
+                                    role: "model",
+                                    parts: [
+                                        {
+                                            text: "請你扮演一個個人助理。你的唯一任務是根據以下提供的「背景資料」來回答「問題」如果「背景資料」中沒有足夠的資訊來回答問題，請你禮貌地回復「抱歉，我無法從提供的資料中找到相關資訊。」，不要編造答案。背景資料:" + msg,
+                                        },
+                                    ],
+                                });
+                            })
+                            .catch(error => {
+                                console.error("Error:", error);
+                                document.getElementById("chatHistory").innerHTML +=
+                                    "<div><div class='author'>Bot:</div>Error: " +
+                                    error +
+                                    "</div>";
+                            });
+                    }
+                </script>  
+
+
+  <script>
+    let tokenClient;
+
+    function handleSignIn() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '17673872927-2oerv6lo3asmhmltbok8th3c9un65q7v.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/drive.readonly',
+    callback: (tokenResponse) => {
+      gapi.load('client', () => {
+        (async () => {
+          await gapi.client.init({
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+          });
+          gapi.client.setToken(tokenResponse);
+          alert('登入成功');
+        })();
+      });
+    },
+  });
+  tokenClient.requestAccessToken();
+}
+
+    async function listAllMdFiles(folderId) {
+      const files = [];
+
+      async function recurse(currentFolderId) {
+        const res = await gapi.client.drive.files.list({
+          q: `'${currentFolderId}' in parents and trashed = false`,
+          fields: 'files(id, name, mimeType)',
+          pageSize: 1000,
+        });
+
+        for (const file of res.result.files) {
+          if (file.mimeType === 'application/vnd.google-apps.folder') {
+            await recurse(file.id);
+          } else if (file.name.endsWith('.md')) {
+            files.push({ id: file.id, name: file.name });
+          }
+        }
+      }
+
+      await recurse(folderId);
+      return files;
+    }
+
+    async function fetchMarkdownContents(mdFiles) {
+      const allContents = [];
+
+      for (const file of mdFiles) {
+        try {
+          const res = await gapi.client.drive.files.get({
+            fileId: file.id,
+            alt: 'media'
+          });
+          allContents.push(`## ${file.name}\n${res.body}`);
+        } catch (err) {
+          console.warn(`讀取 ${file.name} 失敗`, err);
+        }
+      }
+
+      let merged = allContents.join('\n\n');
+      if (merged.length > 30000) {
+        merged = merged.slice(0, 30000); // 限制長度
+      }
+
+      return merged;
+    }
+
+    async function process() {
+      const folderId = document.getElementById('folderIdInput').value.trim();
+      const question = document.getElementById('userQuestion').value.trim();
+      const output = document.getElementById('output');
+      output.textContent = '處理中...';
+
+      if (!folderId) {
+        alert("請輸入資料夾 ID 與問題");
+        return;
+      }
+
+      try {
+        const mdFiles = await listAllMdFiles(folderId);
+        if (mdFiles.length === 0) throw new Error("找不到 .md 檔案");
+
+        const mergedContent = await fetchMarkdownContents(mdFiles);
+        document.getElementById('messageInput').value = "\n請回答我的問題：\n  \n" + mergedContent
+        // 顯示合併後的 Markdown 原文
+        //document.getElementById('output').textContent = '📄 合併內容：\n' + mergedContent;
+        //const res = await fetch('https://us-central1-personalaihelper-db2aa.cloudfunctions.net/askGemini', {
+        //  method: 'POST',
+        //  headers: { 'Content-Type': 'application/json' },
+        //  body: JSON.stringify({
+        //    text: `以下是知識庫內容：\n${mergedContent}\n\n使用者問題：${question}`
+        //  }),
+        //});
+
+       // let data;
+        //if (res.headers.get('content-type')?.includes('application/json')) {
+        //  data = await res.json();
+       // } else {
+        //  const text = await res.text(); // 👈 回傳純文字就抓這個
+        //  throw new Error(text);         // 丟出錯誤給 catch 處理
+        //}
+        //if (data.answer) {
+       //   output.textContent = '🔍 回答：\n' + data.answer;
+       // } else {
+        //  output.textContent = '⚠️ 無法取得回答，伺服器回傳：\n' + JSON.stringify(data, null, 2);
+       // }
+
+      } catch (err) {
+       // output.textContent = '❌ 發生錯誤：\n' + err.message;
+       // console.error(err);
+      }
+    }
+  </script>
+</body>
+</html>
