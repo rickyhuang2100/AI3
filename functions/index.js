@@ -21,7 +21,7 @@ exports.askGemini = functions.https.onRequest(async (req, res) => {
 
   if (!text) return res.status(400).send('缺少 text 參數');
 
-  const specificAccountEmail = 'rickyhuang2100@gmail.com'; // 替換為您要判斷的特定電子郵件地址
+  const specificAccountEmail = process.env.GEMAIL.toString('utf8'); // 替換為您要判斷的特定電子郵件地址
 
   if (googleAccount.email.toLowerCase() === specificAccountEmail.toLowerCase()) {
     // 如果是特定帳號，回傳特定的 A 字串和 B 字串
