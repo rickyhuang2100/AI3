@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Azure DevOps Services 檔案下載</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+    integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+        }
+
+        .controls {
+            margin-bottom: 16px;
+        }
+
+            .controls input {
+                padding: 4px;
+                margin-right: 8px;
+                width: 320px;
+            }
+
+            .controls button {
+                padding: 4px 12px;
+            }
+
+        #result {
+            margin-top: 16px;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+    <h2>Azure DevOps Services 檔案下載</h2>
+    <div class="controls">
+        <div>
+            PAT：<input type="text" id="pat" placeholder="Personal Access Token">到期日是2025/09/02
+        </div>
+        <div>
+            Azure DevOps Services URL：<input type="text" id="devopsUrl" placeholder="https://dev.azure.com/{org}">https://dev.azure.com/ricky9075
+        </div>
+        <div>
+            檔案路徑（TFVC）：<input type="text" id="itemPath" placeholder="/Project/Folder/File.ext">/Ricky/RickyTF/Music/DingCanntTakeMyEyesOfYou.mp3
+        </div>
+        <button onclick="downloadFile()">下載檔案</button>
+    </div>
+    <div id="result"></div>
+
+    <script>async function downloadFile() {
+            ShowProgressBar();
+            const pat = document.getElementById('pat').value.trim();
+            const devopsUrl = document.getElementById('devopsUrl').value.trim();
+            const itemPath = document.getElementById('itemPath').value.trim();
+            const result = document.getElementById('result');
+            result.textContent = '';
+
+            if (!pat || !devopsUrl || !itemPath) {
+                result.textContent = '請輸入所有欄位。';
+                return;
+            }
+
+            // TFVC REST API: /_apis/tfvc/items?path={path}&download=true&api-version=7.1-preview.1
+            const apiUrl = `${devopsUrl}/_apis/tfvc/items?path=${encodeURIComponent(itemPath)}&download=true&api-version=7.1-preview.1`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa(':' + pat)
+                    }
+                });
+
+                if (!response.ok) {
+                    result.textContent = `下載失敗: ${response.status} ${response.statusText}`;
+                    return;
+                }
+
+                // 取得檔案名稱
+                let fileName = itemPath.split('/').pop();
+                if (fileName.startsWith('$')) fileName = fileName.substring(1);
+
+                // 取得檔案內容為 blob
+                const blob = await response.blob();
+
+                // 下載檔案
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+                result.textContent = '下載成功！';
+                HideProgressBar();
+            } catch (err) {
+                result.textContent = '下載失敗: ' + err;
+                HideProgressBar();
+            }
+        }
+    </script>
+<script type="text/javascript">
+    // 顯示讀取遮罩
+    function ShowProgressBar() {
+      displayProgress();
+      displayMaskFrame();
+    }
+
+    // 隱藏讀取遮罩
+    function HideProgressBar() {
+      var progress = $('#divProgress');
+      var maskFrame = $("#divMaskFrame");
+      progress.hide();
+      maskFrame.hide();
+    }
+    // 顯示讀取畫面
+    function displayProgress() {
+      var w = $(document).width();
+      var h = $(window).height();
+      var progress = $('#divProgress');
+      progress.css({
+        "z-index": 999999,
+        "top": (h / 2) - (progress.height() / 2),
+        "left": (w / 2) - (progress.width() / 2)
+      });
+      progress.show();
+    }
+    // 顯示遮罩畫面
+    function displayMaskFrame() {
+      var w = $(window).width();
+      var h = $(document).height();
+      var maskFrame = $("#divMaskFrame");
+      maskFrame.css({
+        "z-index": 999998,
+        "opacity": 0.7,
+        "width": w,
+        "height": h
+      });
+      maskFrame.show();
+    }
+  </script>
+    <div id="divProgress" style="text-align:center; display: none; position: fixed; top: 50%;  left: 50%;">
+    <img src="loading.gif" />
+    <br />
+    <font color="#1B3563" size="2px">資料處理中</font>
+  </div>
+  <div id="divMaskFrame" style="background-color: #F2F4F7; display: none; left: 0px;
+  position: absolute; top: 0px;">
+  </div>
+</body>
+</html>
