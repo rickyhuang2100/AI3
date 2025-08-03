@@ -1,0 +1,181 @@
+﻿<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub 檔案清單</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f0;
+        }
+
+        .controls {
+            margin-bottom: 16px;
+        }
+
+            .controls input {
+                padding: 4px;
+            }
+
+            .controls button {
+                padding: 4px 12px;
+            }
+        tr:hover {
+            background-color: #fff9c4;
+            transition: background 0.2s;
+        }
+    </style>
+</head>
+<body>
+    <h2>GitHub 檔案清單</h2>
+    <div class="controls">
+        <input type="text" id="searchText" placeholder="搜尋檔名...">
+        <button onclick="searchFiles()">搜尋</button>
+        <button onclick="prevPage()">上一頁</button>
+        <button onclick="nextPage()">下一頁</button>
+        <span id="pageInfo"></span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>縮圖</th>
+                <th>檔名</th>
+                <th>下載</th>
+            </tr>
+        </thead>
+        <tbody id="fileList"></tbody>
+    </table>
+
+    <script>
+        const GITHUB_TOKEN = '';
+        const PAGE_SIZE = 30;
+        const OWNER = 'ricky9075';
+        const REPO = 'web-image';
+        const PATH = '';
+        let currentPage = 1;
+        let searchText = '';
+        let allFiles = [];
+
+        async function fetchFiles() {
+            const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+            const headers = {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'User-Agent': 'Mozilla/5.0'
+            };
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                alert('GitHub API 錯誤');
+                return [];
+            }
+            let items = await response.json();
+
+            // 顛倒排序並排除 2Hjd9_IMG 開頭
+            items = items.reverse().filter(item =>
+                item.type === 'file' && !item.path.startsWith('2Hjd9_IMG') && !item.path.startsWith('1.1 system of linear equations')
+            );
+
+            // 依檔名（yyyyMMddHHmmss）降冪排序
+            items.sort((a, b) => {
+                const getDate = (item) => {
+                    const fileName = item.path.split('/').pop().split('.').shift();
+                    const dt = Date.parse(
+                        fileName.replace(
+                            /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,
+                            '$1-$2-$3T$4:$5:$6Z'
+                        )
+                    );
+                    return isNaN(dt) ? 0 : dt;
+                };
+                return getDate(b) - getDate(a) ||
+                    b.path.localeCompare(a.path);
+            });
+
+            return items;
+        }
+
+        function renderFiles() {
+            let filtered = allFiles;
+            if (searchText) {
+                filtered = filtered.filter(item =>
+                    item.path.toLowerCase().includes(searchText.toLowerCase())
+                );
+            }
+            const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const paged = filtered.slice(start, start + PAGE_SIZE);
+
+            const tbody = document.getElementById('fileList');
+            tbody.innerHTML = '';
+            paged.forEach(item => {
+                const fileName = item.path.split('/').pop();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        ${isImage(fileName)
+                                            ? `<img src="${item.download_url}" alt="${fileName}" style="max-width:200px;max-height:200px;cursor:pointer;" onclick="window.open('${item.download_url}', '_blank')">`
+                                            : fileName}
+                    </td>
+                    <td>${fileName}</td>
+                    <td><a href="${item.download_url}" target="_blank">下載</a></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('pageInfo').textContent =
+                `第 ${currentPage} 頁 / 共 ${totalPage} 頁 (${filtered.length} 筆)`;
+        }
+
+        async function init() {
+            allFiles = await fetchFiles();
+            currentPage = 1;
+            renderFiles();
+        }
+        function isImage(fileName) {
+            return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName);
+        }
+        function searchFiles() {
+            searchText = document.getElementById('searchText').value.trim();
+            currentPage = 1;
+            renderFiles();
+        }
+
+        function nextPage() {
+            let filtered = allFiles;
+            if (searchText) {
+                filtered = filtered.filter(item =>
+                    item.path.toLowerCase().includes(searchText.toLowerCase())
+                );
+            }
+            const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
+            if (currentPage < totalPage) {
+                currentPage++;
+                renderFiles();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderFiles();
+            }
+        }
+
+        window.onload = init;</script>
+</body>
+</html>

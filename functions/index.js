@@ -27,6 +27,7 @@ exports.askGemini = functions.https.onRequest(async (req, res) => {
     // 如果是特定帳號，回傳特定的 A 字串和 B 字串
     //ANCHOR[id=ric25051809] aKey API Key
     const aKey = Buffer.from(process.env.AKEY, 'base64').toString('utf8');
+    const githubToken = Buffer.from(process.env.githubToken, 'base64').toString('utf8');
     //const aKey = Buffer.from(functions.config().service.akey, 'base64').toString('utf8');
     //const aKey = functions.config().service.akey; // 定義您的特定 A 字串
     

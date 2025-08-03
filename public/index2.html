@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>私人AI助理</title>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+    integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+  <script type="text/javascript">
+    // 顯示讀取遮罩
+    function ShowProgressBar() {
+      displayProgress();
+      displayMaskFrame();
+    }
+
+    // 隱藏讀取遮罩
+    function HideProgressBar() {
+      var progress = $('#divProgress');
+      var maskFrame = $("#divMaskFrame");
+      progress.hide();
+      maskFrame.hide();
+    }
+    // 顯示讀取畫面
+    function displayProgress() {
+      var w = $(document).width();
+      var h = $(window).height();
+      var progress = $('#divProgress');
+      progress.css({
+        "z-index": 999999,
+        "top": (h / 2) - (progress.height() / 2),
+        "left": (w / 2) - (progress.width() / 2)
+      });
+      progress.show();
+    }
+    // 顯示遮罩畫面
+    function displayMaskFrame() {
+      var w = $(window).width();
+      var h = $(document).height();
+      var maskFrame = $("#divMaskFrame");
+      maskFrame.css({
+        "z-index": 999998,
+        "opacity": 0.7,
+        "width": w,
+        "height": h
+      });
+      maskFrame.show();
+    }
+  </script>
+  <style>
+    /* 你可以在這裡加入一些 CSS 樣式來美化介面 */
+    input,
+    button {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: unset;
+      font-size: 16px;
+    }
+
+    button {
+      background-color: rgb(0, 26, 255);
+      color: rgb(255, 242, 0);
+      font-weight: bold;
+      cursor: pointer;
+      opacity: 1;
+    }
+
+    button:focus-visible {
+      outline: 2px solid white;
+      outline-offset: -4px;
+    }
+
+    button:hover {
+      opacity: 0.95;
+    }
+
+    body {
+      font-family: sans-serif;
+      line-height: 1.6;
+      margin: 5px;
+    }
+
+    main {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .prompt-box {
+      display: flex;
+      margin-bottom: 20px;
+    }
+
+    .prompt-box input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-right: 10px;
+    }
+
+    .prompt-box button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .prompt-box button:hover {
+      background-color: #0056b3;
+    }
+
+    .output {
+      border: 1px solid #ccc;
+      padding: 15px;
+      min-height: 100px;
+      white-space: pre-wrap;
+      /* 保留換行符號 */
+    }
+  </style>
+</head>
+
+<body>
+  <div id="showMes"></div>
+  GitHub 檔案清單
+  <button onclick="handleSignIn()">登入 Google</button>
+  <a href="https://share.note.sx/erm7ej0z#Vz6EsicszOcYLioL9K+DRHKQGTXYppHym1QnxSujMvQ" target="_blank">❓輸入資料夾
+    ID</a><input id="folderIdInput" placeholder="資料夾 ID" size="50">
+  <div class="checkbox-container">
+    <input type="checkbox" id="isAutoGetData" name="isAutoGetData" checked/>
+    <label for="isAutoGetData">是否在登入成功後自動取得資料</label>
+  </div>
+  <button id="butProcess" onclick="process()">取得資料</button>
+  注意：只會讀取.md的檔案內容
+  <textarea id="messageInput" placeholder="資料內容" style="width: 100%;height: 100px;"></textarea>
+  <a href="https://share.note.sx/oon2ai7u#WLk+P4DRauu/Nluw1zx9VjxlmDJz0JL/qQbR9YNULC0" target="_blank">❓輸入API Key
+  </a><input type="password" id="apiKey" placeholder="API Key" />
+  <a href="" target="_blank">❓輸入GITHUB_TOKEN
+  </a><input type="password" id="githubToken" placeholder="GITHUB TOKEN" />
+  輸入問題
+  <textarea id="userQuestion" placeholder="問題內容" style="width: 100%;height: 100px;"></textarea>
+  <div class="checkbox-container">
+    <input type="checkbox" id="continueQuestion" name="continueQuestion" onchange="document.getElementById('messageInput').disabled = this.checked;" />
+    <label for="continueQuestion">是否接續問答</label>
+  </div>
+  <button onclick="sendMessage()">送出</button>
+
+  <!--//ANCHOR[id=ric25051901] 送出 onclick-->
+
+  <div class="inputs">
+
+
+
+  </div>
+  <p class="output" id="answer" style="display: none;">(AI 的回答會顯示在這裡)</p>
+
+  <pre id="output" style="display: none;"></pre>
+
+
+  <script src="showdown.min.js"></script>
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
+        "Helvetica Neue", sans-serif;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #chatHistory {
+      /*flex-grow: 1;*/
+    }
+
+    .inputs {
+      display: flex;
+    }
+
+    #messageInput {
+      padding: 10px;
+      /* Add padding to messageInput textarea */
+    }
+
+    #userQuestion {
+      padding: 10px;
+      /* Add padding to userQuestion textarea */
+      flex-grow: 1;
+    }
+
+    .inputs>* {
+      height: 2rem;
+      padding: 0.5rem;
+    }
+
+    #chatHistory>div {
+      margin-top: 1rem;
+    }
+  </style>
+  Gemini 問答
+  <div id="chatHistory" style="width: 100%; height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+    <!-- Chat history will appear here -->
+  </div>
+
+  <script>
+    const converter = new showdown.Converter();
+    let thread = [];
+
+    function sendMessage() {
+      var apiKey = document.getElementById("apiKey").value.trim();
+      const userQuestion = document.getElementById("userQuestion").value.trim();
+      if (!userQuestion || !apiKey) {
+        alert("請輸入問題和 API Key");
+        return;
+      }
+
+      ShowProgressBar();
+      const message = document.getElementById("messageInput").value;
+      var queAndMes = "";
+      const isContinuing = document.getElementById('continueQuestion').checked;
+      //ANCHOR[id=ric25052001] 是否接續問答
+      if (isContinuing) {
+        queAndMes = "請接續之前的問答，請回答我的問題：\n " + userQuestion;
+        //ANCHOR[id=ric25052002] 第n次問答，「提示詞」加「問題」
+      } else {
+        queAndMes =
+          "請你扮演一個個人助理。你的唯一任務是根據以下提供的「背景資料」來回答「問題」如果「背景資料」中沒有足夠的資訊來回答問題，請你禮貌地回復「抱歉，我無法從提供的資料中找到相關資訊。」，不要編造答案。\n 請回答我的問題：" +
+          userQuestion + "\n" + "背景資料:\n" + message;
+        //ANCHOR[id=ric25051902] 第1次問答，「提示詞」加「問題」加「背景資料」
+      }
+      //ANCHOR[id=ric25052003] 設定了變數 thread 來保存對話內容，這樣我們就可以連續對話了
+      thread.push({
+        role: "user",
+        parts: [{
+          text: queAndMes
+        }],
+      });
+      console.log(apiKey);
+      fetch(
+          //ANCHOR[id=ric25051815] AI API的url加key
+          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
+          apiKey, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: thread,
+            }),
+          }
+        )
+        .then(response => response.json())
+        .then(data => {
+          const message = document.getElementById("messageInput").value;
+          const msg = data.candidates[0].content.parts[0].text;
+          //document.getElementById("chatHistory").innerHTML +=
+          //    "<div><div class='author'>AI:</div>" +
+          //    converter.makeHtml(msg) + "<br/>You:<br/>" + message
+          //    "</div>";
+          // 取得目前的日期時間
+          const now = new Date();
+
+          // 取得年、月、日、時、分、秒
+          const year = now.getFullYear();
+          const month = (now.getMonth() + 1).toString().padStart(2, '0'); // 月份是從 0 開始的，所以要加 1
+          const day = now.getDate().toString().padStart(2, '0');
+          const hours = now.getHours().toString().padStart(2, '0');
+          const minutes = now.getMinutes().toString().padStart(2, '0');
+          const seconds = now.getSeconds().toString().padStart(2, '0');
+
+          // 格式化日期時間字串
+          const formattedTime = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+
+          // 將 AI 回覆和時間字串組合起來
+          const aiResponseWithTime = `AI(${formattedTime}):<br>${converter.makeHtml(msg)}`; // 加上 <br> 換行
+
+          document.getElementById("chatHistory").innerHTML =
+            "<div><div class='author'>" +
+            aiResponseWithTime +
+            "</div></div>" +
+            document.getElementById("chatHistory").innerHTML;
+          //ANCHOR[id=ric25051816] 輸出AI的答案
+          document.getElementById('continueQuestion').checked = true;
+          document.getElementById('messageInput').disabled = true;
+          HideProgressBar();
+          thread.push({
+            role: "model",
+            parts: [{
+              text: queAndMes,
+            }, ],
+          });
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          document.getElementById("chatHistory").innerHTML +=
+            "<div><div class='author'>Bot:</div>Error: " +
+            error +
+            "</div>";
+        });
+    }
+  </script>
+
+
+  <script>
+    let tokenClient;
+    function handleSignIn() {
+      ShowProgressBar();
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: '17673872927-2oerv6lo3asmhmltbok8th3c9un65q7v.apps.googleusercontent.com',
+        scope: 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+        callback: (tokenResponse) => {
+          gapi.load('client', () => {
+            (async () => {
+              await gapi.client.init({
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+                  'https://www.googleapis.com/discovery/v1/apis/oauth2/v2/rest'
+                ]
+              });
+              gapi.client.setToken(tokenResponse);
+
+              //ANCHOR[id=ric25051805] 使用 Google API 获取用户信息
+              const userInfoResponse = await gapi.client.oauth2.userinfo.get();
+              //ANCHOR[id=ric25051808] googleAccount 帳號資料元件
+              const googleAccount = {
+                id: userInfoResponse.result.id,
+                name: userInfoResponse.result.name,
+                imageUrl: userInfoResponse.result.picture,
+                email: userInfoResponse.result.email
+              };
+              //console.log(googleAccount);
+
+              // 發送給 Cloud Function
+              try {
+                //ANCHOR[id=ric25051806] 發送給 Cloud Function
+                //ANCHOR[id=ric25051807] await fetch(url)
+                const response = await fetch('https://us-central1-personalaihelper-db2aa.cloudfunctions.net/askGemini', {
+                  method: 'POST',        
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    text: '請根據我的帳號資訊回傳結果',
+                    googleAccount: googleAccount
+                  })
+                });
+
+                const data = await response.json();
+                console.log('Cloud Function 回應:', data);
+                //ANCHOR[id=ric25051811] api Key 填入前端文字方塊
+                document.getElementById("apiKey").value = data.aKey;
+                //ANCHOR[id=ric25051812] 資料夾ID 填入前端文字方塊
+                document.getElementById("githubToken").value = data.githubToken;
+                if (document.getElementById("folderIdInput").value==''){
+                  document.getElementById("folderIdInput").value = data.fId;
+                }
+                const isAutoGetData = document.getElementById('isAutoGetData').checked;
+                //ANCHOR[id=ric25052004] 是否在登入成功後自動取得資料
+                if (document.getElementById("folderIdInput").value !== "" && isAutoGetData) {
+                  //ANCHOR[id=ric25051813] 點擊，取得資料
+                  document.getElementById('butProcess').click();
+                } else {
+                  HideProgressBar();
+                }
+                //alert('登入成功');
+                $("#showMes").text("登入成功");
+              } catch (error) {
+                console.error('呼叫 Cloud Function 時發生錯誤:', error);
+                alert('呼叫 Cloud Function 時發生錯誤');
+              }
+            })();
+          });
+        },
+      });
+      tokenClient.requestAccessToken();
+    }
+
+    async function listAllMdFiles(folderId) {
+      const files = [];
+
+      async function recurse(currentFolderId) {
+        const res = await gapi.client.drive.files.list({
+          q: `'${currentFolderId}' in parents and trashed = false`,
+          fields: 'files(id, name, mimeType)',
+          pageSize: 1000,
+        });
+
+        for (const file of res.result.files) {
+          if (file.mimeType === 'application/vnd.google-apps.folder') {
+            await recurse(file.id);
+          } else if (file.name.endsWith('.md')) {
+            //ANCHOR[id=ric25051814] 遞迴取得.md檔內容
+            files.push({
+              id: file.id,
+              name: file.name
+            });
+          }
+        }
+      }
+
+      await recurse(folderId);
+      return files;
+    }
+
+    async function fetchMarkdownContents(mdFiles) {
+    const allContents = [];
+
+    for (const file of mdFiles) {
+    try {
+    //ANCHOR[id=ric25052201] 避免亂碼，使用 gapi.client.request 來取得 Blob，然後自己轉 ArrayBuffer
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+    headers: {
+    Authorization: `Bearer ${gapi.auth.getToken().access_token}`
+    }
+    });
+
+    const arrayBuffer = await res.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const text = decoder.decode(arrayBuffer);
+    const textSingleLine = text
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s*(<[^>]+>)\s*/g, '$1')   // 移除標籤前後的空白
+    .replace(/>\s+</g, '><')             // 移除標籤之間的空白
+    .replace(/\s{2,}/g, ' ')             // 多個空白壓成一個空格
+    .trim();  
+    ;
+    allContents.push(`## ${file.name}\n${textSingleLine}`);
+    } catch (err) {
+          console.warn(`讀取 ${file.name} 失敗`, err);
+        }
+      }
+
+      let merged = allContents.join('\n\n');
+      if (merged.length > 999999) {
+        merged = merged.slice(0, 999999); // 限制長度
+        alert("資料長度超過999999限制，已截斷");
+      }
+
+      return merged;
+    }
+
+    async function process() {
+      //setTimeout('ShowProgressBar();',50);
+      ShowProgressBar();
+      const folderId = document.getElementById('folderIdInput').value.trim();
+      const output = document.getElementById('output');
+      output.textContent = '處理中...';
+
+      if (!folderId) {
+        alert("請輸入資料夾 ID");
+        return;
+      }
+
+      try {
+        const mdFiles = await listAllMdFiles(folderId);
+        if (mdFiles.length === 0) {
+          alert("找不到 .md 檔案");
+          throw new Error("找不到 .md 檔案");
+        }
+
+        const mergedContent = await fetchMarkdownContents(mdFiles);
+        document.getElementById('messageInput').value = mergedContent;
+        document.getElementById('continueQuestion').checked = false;
+        HideProgressBar();
+        document.getElementById('userQuestion').focus();
+        // 顯示合併後的 Markdown 原文
+        //document.getElementById('output').textContent = '📄 合併內容：\n' + mergedContent;
+        //const res = await fetch('https://us-central1-personalaihelper-db2aa.cloudfunctions.net/askGemini', {
+        //  method: 'POST',
+        //  headers: { 'Content-Type': 'application/json' },
+        //  body: JSON.stringify({
+        //    text: `以下是知識庫內容：\n${mergedContent}\n\n使用者問題：${question}`
+        //  }),
+        //});
+
+        // let data;
+        //if (res.headers.get('content-type')?.includes('application/json')) {
+        //  data = await res.json();
+        // } else {
+        //  const text = await res.text(); // 👈 回傳純文字就抓這個
+        //  throw new Error(text);         // 丟出錯誤給 catch 處理
+        //}
+        //if (data.answer) {
+        //   output.textContent = '🔍 回答：\n' + data.answer;
+        // } else {
+        //  output.textContent = '⚠️ 無法取得回答，伺服器回傳：\n' + JSON.stringify(data, null, 2);
+        // }
+
+      } catch (err) {
+        // output.textContent = '❌ 發生錯誤：\n' + err.message;
+        // console.error(err);
+      }
+    }
+  </script>
+  <div id="divProgress" style="text-align:center; display: none; position: fixed; top: 50%;  left: 50%;">
+    <img src="loading.gif" />
+    <br />
+    <font color="#1B3563" size="2px">資料處理中</font>
+  </div>
+  <div id="divMaskFrame" style="background-color: #F2F4F7; display: none; left: 0px;
+  position: absolute; top: 0px;">
+  </div>
+</body>
+
+</html>
