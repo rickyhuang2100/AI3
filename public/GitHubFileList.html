@@ -298,6 +298,12 @@
             background-color: #fff9c4;
             transition: background 0.2s;
         }
+        #tab thead {
+        position: sticky;
+        top: 0;
+        background-color: #fff; /* 背景色可以根據需要調整 */
+        z-index: 1;
+        }
     </style>
 <br/>
     <div class="controls">
@@ -307,12 +313,12 @@
         <button onclick="nextPage()">下一頁</button><br/>
         <span id="pageInfo"></span>
     </div>
-    <table>
+    <table id="tab">
         <thead>
             <tr>
-                <th>縮圖</th>
-                <th>檔名</th>
-                <th>下載</th>
+                <td>縮圖</td>
+                <td>檔名</td>
+                <td></td>
             </tr>
         </thead>
         <tbody id="fileList"></tbody>
