@@ -306,15 +306,24 @@
         }
     </style>
 <br/>
-    <div class="controls">
+    <!--<div class="controls">
         <input type="text" id="searchText" placeholder="搜尋檔名...">
         <button onclick="searchFiles()">搜尋</button>&nbsp;&nbsp;
         <button onclick="prevPage()">上一頁</button>&nbsp;&nbsp;
         <button onclick="nextPage()">下一頁</button><br/>
         <span id="pageInfo"></span>
-    </div>
+    </div>-->
     <table id="tab">
         <thead>
+            <tr>
+                <td colspan="3">
+                    <input type="text" id="searchText" placeholder="搜尋檔名...">
+                    <button onclick="searchFiles()">搜尋</button>&nbsp;&nbsp;
+                    <button onclick="prevPage()">上一頁</button>&nbsp;&nbsp;
+                    <button onclick="nextPage()">下一頁</button><br/>
+                    <span id="pageInfo"></span>
+                </td>
+            </tr>
             <tr>
                 <td>縮圖</td>
                 <td>檔名</td>
