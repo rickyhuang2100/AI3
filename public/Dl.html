@@ -1,11 +1,12 @@
 ﻿<!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Azure DevOps Services 檔案下載</title>
     <script src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
-    integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
+        integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8=" crossorigin="anonymous"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,15 +17,15 @@
             margin-bottom: 16px;
         }
 
-            .controls input {
-                padding: 4px;
-                margin-right: 8px;
-                width: 320px;
-            }
+        .controls input {
+            padding: 4px;
+            margin-right: 8px;
+            width: 320px;
+        }
 
-            .controls button {
-                padding: 4px 12px;
-            }
+        .controls button {
+            padding: 4px 12px;
+        }
 
         #result {
             margin-top: 16px;
@@ -32,23 +33,31 @@
         }
     </style>
 </head>
+
 <body>
     <h2>Azure DevOps Services 檔案下載</h2>
     <div class="controls">
         <div>
-            PAT：<input type="text" id="pat" placeholder="Personal Access Token">到期日是2025/09/02，<a href="https://learn.microsoft.com/zh-tw/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate" target="_blank">如何取得 PAT</a>，<a href="https://dev.azure.com/ricky9075/_usersSettings/tokens" target="_blank">更新Token</a>，<a href="https://share.note.sx/gw62gxr0#azr+zAZnAJxLDnJAdWCZ16eUNczavG2D2NLpYRUfj0w" target="_blank">說明</a>
+            PAT：<input type="text" id="pat" placeholder="Personal Access Token">到期日是2025/09/02，<a
+                href="https://learn.microsoft.com/zh-tw/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate"
+                target="_blank">如何取得 PAT</a>，<a href="https://dev.azure.com/ricky9075/_usersSettings/tokens"
+                target="_blank">更新Token</a>，<a
+                href="https://share.note.sx/gw62gxr0#azr+zAZnAJxLDnJAdWCZ16eUNczavG2D2NLpYRUfj0w" target="_blank">說明</a>
         </div>
         <div>
-            Azure DevOps Services URL：<input type="text" id="devopsUrl" placeholder="https://dev.azure.com/{org}">https://dev.azure.com/ricky9075
+            Azure DevOps Services URL：<input type="text" id="devopsUrl"
+                placeholder="https://dev.azure.com/{org}">https://dev.azure.com/ricky9075
         </div>
         <div>
-            檔案路徑（TFVC）：<input type="text" id="itemPath" placeholder="/Project/Folder/File.ext">/Ricky/RickyTF/Music/DingCanntTakeMyEyesOfYou.mp3
+            檔案路徑（TFVC）：<input type="text" id="itemPath"
+                placeholder="/Project/Folder/File.ext">/Ricky/RickyTF/Music/DingCanntTakeMyEyesOfYou.mp3
         </div>
         <button onclick="downloadFile()">下載檔案</button>
     </div>
     <div id="result"></div>
 
-    <script>async function downloadFile() {
+    <script>
+        async function downloadFile() {
             ShowProgressBar();
             const pat = document.getElementById('pat').value.trim();
             const devopsUrl = document.getElementById('devopsUrl').value.trim();
@@ -62,7 +71,8 @@
             }
 
             // TFVC REST API: /_apis/tfvc/items?path={path}&download=true&api-version=7.1-preview.1
-            const apiUrl = `${devopsUrl}/_apis/tfvc/items?path=${encodeURIComponent(itemPath)}&download=true&api-version=7.1-preview.1`;
+            const apiUrl =
+                `${devopsUrl}/_apis/tfvc/items?path=${encodeURIComponent(itemPath)}&download=true&api-version=7.1-preview.1`;
 
             try {
                 const response = await fetch(apiUrl, {
@@ -102,53 +112,54 @@
             }
         }
     </script>
-<script type="text/javascript">
-    // 顯示讀取遮罩
-    function ShowProgressBar() {
-      displayProgress();
-      displayMaskFrame();
-    }
+    <script type="text/javascript">
+        // 顯示讀取遮罩
+        function ShowProgressBar() {
+            displayProgress();
+            displayMaskFrame();
+        }
 
-    // 隱藏讀取遮罩
-    function HideProgressBar() {
-      var progress = $('#divProgress');
-      var maskFrame = $("#divMaskFrame");
-      progress.hide();
-      maskFrame.hide();
-    }
-    // 顯示讀取畫面
-    function displayProgress() {
-      var w = $(document).width();
-      var h = $(window).height();
-      var progress = $('#divProgress');
-      progress.css({
-        "z-index": 999999,
-        "top": (h / 2) - (progress.height() / 2),
-        "left": (w / 2) - (progress.width() / 2)
-      });
-      progress.show();
-    }
-    // 顯示遮罩畫面
-    function displayMaskFrame() {
-      var w = $(window).width();
-      var h = $(document).height();
-      var maskFrame = $("#divMaskFrame");
-      maskFrame.css({
-        "z-index": 999998,
-        "opacity": 0.7,
-        "width": w,
-        "height": h
-      });
-      maskFrame.show();
-    }
-  </script>
+        // 隱藏讀取遮罩
+        function HideProgressBar() {
+            var progress = $('#divProgress');
+            var maskFrame = $("#divMaskFrame");
+            progress.hide();
+            maskFrame.hide();
+        }
+        // 顯示讀取畫面
+        function displayProgress() {
+            var w = $(document).width();
+            var h = $(window).height();
+            var progress = $('#divProgress');
+            progress.css({
+                "z-index": 999999,
+                "top": (h / 2) - (progress.height() / 2),
+                "left": (w / 2) - (progress.width() / 2)
+            });
+            progress.show();
+        }
+        // 顯示遮罩畫面
+        function displayMaskFrame() {
+            var w = $(window).width();
+            var h = $(document).height();
+            var maskFrame = $("#divMaskFrame");
+            maskFrame.css({
+                "z-index": 999998,
+                "opacity": 0.7,
+                "width": w,
+                "height": h
+            });
+            maskFrame.show();
+        }
+    </script>
     <div id="divProgress" style="text-align:center; display: none; position: fixed; top: 50%;  left: 50%;">
-    <img src="loading.gif" />
-    <br />
-    <font color="#1B3563" size="2px">資料處理中</font>
-  </div>
-  <div id="divMaskFrame" style="background-color: #F2F4F7; display: none; left: 0px;
+        <img src="loading.gif" />
+        <br />
+        <font color="#1B3563" size="2px">資料處理中</font>
+    </div>
+    <div id="divMaskFrame" style="background-color: #F2F4F7; display: none; left: 0px;
   position: absolute; top: 0px;">
-  </div>
+    </div>
 </body>
+
 </html>
