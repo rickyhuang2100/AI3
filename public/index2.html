@@ -128,28 +128,6 @@
   <div id="showMes"></div>
   GitHub 檔案清單
   <button onclick="handleSignIn()">登入 Google</button>
-  <a href="https://share.note.sx/erm7ej0z#Vz6EsicszOcYLioL9K+DRHKQGTXYppHym1QnxSujMvQ" target="_blank">❓輸入資料夾
-    ID</a><input id="folderIdInput" placeholder="資料夾 ID" size="50">
-  <div class="checkbox-container">
-    <input type="checkbox" id="isAutoGetData" name="isAutoGetData" checked/>
-    <label for="isAutoGetData">是否在登入成功後自動取得資料</label>
-  </div>
-  <button id="butProcess" onclick="process()">取得資料</button>
-  注意：只會讀取.md的檔案內容
-  <textarea id="messageInput" placeholder="資料內容" style="width: 100%;height: 100px;"></textarea>
-  <a href="https://share.note.sx/oon2ai7u#WLk+P4DRauu/Nluw1zx9VjxlmDJz0JL/qQbR9YNULC0" target="_blank">❓輸入API Key
-  </a><input type="password" id="apiKey" placeholder="API Key" />
-  <a href="" target="_blank">❓輸入GITHUB_TOKEN
-  </a><input type="password" id="gitHubToken" placeholder="GITHUB TOKEN" />
-  輸入問題
-  <textarea id="userQuestion" placeholder="問題內容" style="width: 100%;height: 100px;"></textarea>
-  <div class="checkbox-container">
-    <input type="checkbox" id="continueQuestion" name="continueQuestion" onchange="document.getElementById('messageInput').disabled = this.checked;" />
-    <label for="continueQuestion">是否接續問答</label>
-  </div>
-  <button onclick="sendMessage()">送出</button>
-
-  <!--//ANCHOR[id=ric25051901] 送出 onclick-->
 
   <div class="inputs">
 
@@ -206,11 +184,7 @@
       margin-top: 1rem;
     }
   </style>
-  Gemini 問答
-  <div id="chatHistory" style="width: 100%; height: 300px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
-    <!-- Chat history will appear here -->
-  </div>
-
+  
   <script>
     const converter = new showdown.Converter();
     let thread = [];
@@ -356,20 +330,20 @@
                 const data = await response.json();
                 console.log('Cloud Function 回應:', data);
                 //ANCHOR[id=ric25051811] api Key 填入前端文字方塊
-                document.getElementById("apiKey").value = data.aKey;
+                //document.getElementById("apiKey").value = data.aKey;
                 //ANCHOR[id=ric25051812] 資料夾ID 填入前端文字方塊
                 document.getElementById("gitHubToken").value = data.gitHubToken;
-                if (document.getElementById("folderIdInput").value==''){
-                  document.getElementById("folderIdInput").value = data.fId;
-                }
-                const isAutoGetData = document.getElementById('isAutoGetData').checked;
+                //if (document.getElementById("folderIdInput").value==''){
+                 // document.getElementById("folderIdInput").value = data.fId;
+                //}
+                //const isAutoGetData = document.getElementById('isAutoGetData').checked;
                 //ANCHOR[id=ric25052004] 是否在登入成功後自動取得資料
-                if (document.getElementById("folderIdInput").value !== "" && isAutoGetData) {
+                //if (document.getElementById("folderIdInput").value !== "" && isAutoGetData) {
                   //ANCHOR[id=ric25051813] 點擊，取得資料
-                  document.getElementById('butProcess').click();
-                } else {
+                  //document.getElementById('butProcess').click();
+                //} else {
                   HideProgressBar();
-                }
+               // }
                 //alert('登入成功');
                 $("#showMes").text("登入成功");
               } catch (error) {
@@ -383,123 +357,195 @@
       tokenClient.requestAccessToken();
     }
 
-    async function listAllMdFiles(folderId) {
-      const files = [];
-
-      async function recurse(currentFolderId) {
-        const res = await gapi.client.drive.files.list({
-          q: `'${currentFolderId}' in parents and trashed = false`,
-          fields: 'files(id, name, mimeType)',
-          pageSize: 1000,
-        });
-
-        for (const file of res.result.files) {
-          if (file.mimeType === 'application/vnd.google-apps.folder') {
-            await recurse(file.id);
-          } else if (file.name.endsWith('.md')) {
-            //ANCHOR[id=ric25051814] 遞迴取得.md檔內容
-            files.push({
-              id: file.id,
-              name: file.name
-            });
-          }
-        }
-      }
-
-      await recurse(folderId);
-      return files;
-    }
-
-    async function fetchMarkdownContents(mdFiles) {
-    const allContents = [];
-
-    for (const file of mdFiles) {
-    try {
-    //ANCHOR[id=ric25052201] 避免亂碼，使用 gapi.client.request 來取得 Blob，然後自己轉 ArrayBuffer
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
-    headers: {
-    Authorization: `Bearer ${gapi.auth.getToken().access_token}`
-    }
-    });
-
-    const arrayBuffer = await res.arrayBuffer();
-    const decoder = new TextDecoder('utf-8');
-    const text = decoder.decode(arrayBuffer);
-    const textSingleLine = text
-    .replace(/[\r\n]+/g, ' ')
-    .replace(/\s*(<[^>]+>)\s*/g, '$1')   // 移除標籤前後的空白
-    .replace(/>\s+</g, '><')             // 移除標籤之間的空白
-    .replace(/\s{2,}/g, ' ')             // 多個空白壓成一個空格
-    .trim();  
-    ;
-    allContents.push(`## ${file.name}\n${textSingleLine}`);
-    } catch (err) {
-          console.warn(`讀取 ${file.name} 失敗`, err);
-        }
-      }
-
-      let merged = allContents.join('\n\n');
-      if (merged.length > 999999) {
-        merged = merged.slice(0, 999999); // 限制長度
-        alert("資料長度超過999999限制，已截斷");
-      }
-
-      return merged;
-    }
 
     async function process() {
       //setTimeout('ShowProgressBar();',50);
       ShowProgressBar();
-      const folderId = document.getElementById('folderIdInput').value.trim();
-      const output = document.getElementById('output');
-      output.textContent = '處理中...';
-
-      if (!folderId) {
-        alert("請輸入資料夾 ID");
-        return;
-      }
-
-      try {
-        const mdFiles = await listAllMdFiles(folderId);
-        if (mdFiles.length === 0) {
-          alert("找不到 .md 檔案");
-          throw new Error("找不到 .md 檔案");
-        }
-
-        const mergedContent = await fetchMarkdownContents(mdFiles);
-        document.getElementById('messageInput').value = mergedContent;
-        document.getElementById('continueQuestion').checked = false;
-        HideProgressBar();
-        document.getElementById('userQuestion').focus();
-        // 顯示合併後的 Markdown 原文
-        //document.getElementById('output').textContent = '📄 合併內容：\n' + mergedContent;
-        //const res = await fetch('https://us-central1-personalaihelper-db2aa.cloudfunctions.net/askGemini', {
-        //  method: 'POST',
-        //  headers: { 'Content-Type': 'application/json' },
-        //  body: JSON.stringify({
-        //    text: `以下是知識庫內容：\n${mergedContent}\n\n使用者問題：${question}`
-        //  }),
-        //});
-
-        // let data;
-        //if (res.headers.get('content-type')?.includes('application/json')) {
-        //  data = await res.json();
-        // } else {
-        //  const text = await res.text(); // 👈 回傳純文字就抓這個
-        //  throw new Error(text);         // 丟出錯誤給 catch 處理
-        //}
-        //if (data.answer) {
-        //   output.textContent = '🔍 回答：\n' + data.answer;
-        // } else {
-        //  output.textContent = '⚠️ 無法取得回答，伺服器回傳：\n' + JSON.stringify(data, null, 2);
-        // }
-
-      } catch (err) {
-        // output.textContent = '❌ 發生錯誤：\n' + err.message;
-        // console.error(err);
-      }
+      GITHUB_TOKEN = document.getElementById('gitHubToken').value.trim();
+      init();
     }
   </script>
+  <a href="" target="_blank">❓輸入GITHUB_TOKEN
+  </a><input type="password" id="gitHubToken" placeholder="GITHUB TOKEN" />
+  <button id="butProcess" onclick="process()">取得資料</button>
+
+      <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f0;
+        }
+
+        .controls {
+            margin-bottom: 16px;
+        }
+
+            .controls input {
+                padding: 4px;
+            }
+
+            .controls button {
+                padding: 4px 12px;
+            }
+        tr:hover {
+            background-color: #fff9c4;
+            transition: background 0.2s;
+        }
+    </style>
+<br/>
+    <div class="controls">
+        <input type="text" id="searchText" placeholder="搜尋檔名...">
+        <button onclick="searchFiles()">搜尋</button>&nbsp;&nbsp;&nbsp;&nbsp;
+        <button onclick="prevPage()">上一頁</button>&nbsp;&nbsp;&nbsp;&nbsp;
+        <button onclick="nextPage()">下一頁</button>&nbsp;&nbsp;&nbsp;&nbsp;
+        <span id="pageInfo"></span>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>縮圖</th>
+                <th>檔名</th>
+                <th>下載</th>
+            </tr>
+        </thead>
+        <tbody id="fileList"></tbody>
+    </table>
+
+    <script>
+
+        var GITHUB_TOKEN = '';
+        const PAGE_SIZE = 30;
+        const OWNER = 'ricky9075';
+        const REPO = 'web-image';
+        const PATH = '';
+        let currentPage = 1;
+        let searchText = '';
+        let allFiles = [];
+
+        async function fetchFiles() {
+            const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
+            const headers = {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'User-Agent': 'Mozilla/5.0'
+            };
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+                alert('GitHub API 錯誤');
+                return [];
+            }
+            let items = await response.json();
+
+            // 顛倒排序並排除 2Hjd9_IMG 開頭
+            items = items.reverse().filter(item =>
+                item.type === 'file' && !item.path.startsWith('2Hjd9_IMG') && !item.path.startsWith('1.1 system of linear equations')
+            );
+
+            // 依檔名（yyyyMMddHHmmss）降冪排序
+            items.sort((a, b) => {
+                const getDate = (item) => {
+                    const fileName = item.path.split('/').pop().split('.').shift();
+                    const dt = Date.parse(
+                        fileName.replace(
+                            /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,
+                            '$1-$2-$3T$4:$5:$6Z'
+                        )
+                    );
+                    return isNaN(dt) ? 0 : dt;
+                };
+                return getDate(b) - getDate(a) ||
+                    b.path.localeCompare(a.path);
+            });
+
+            return items;
+        }
+
+        function renderFiles() {
+            let filtered = allFiles;
+            if (searchText) {
+                filtered = filtered.filter(item =>
+                    item.path.toLowerCase().includes(searchText.toLowerCase())
+                );
+            }
+            const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const paged = filtered.slice(start, start + PAGE_SIZE);
+
+            const tbody = document.getElementById('fileList');
+            tbody.innerHTML = '';
+            paged.forEach(item => {
+                const fileName = item.path.split('/').pop();
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        ${isImage(fileName)
+                                            ? `<img src="${item.download_url}" alt="${fileName}" style="max-width:200px;max-height:200px;cursor:pointer;" onclick="window.open('${item.download_url}', '_blank')">`
+                                            : fileName}
+                    </td>
+                    <td>${fileName}</td>
+                    <td><a href="${item.download_url}" target="_blank">下載</a></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('pageInfo').textContent =
+                `第 ${currentPage} 頁 / 共 ${totalPage} 頁 (${filtered.length} 筆)`;
+                HideProgressBar();
+        }
+
+        async function init() {
+            allFiles = await fetchFiles();
+            currentPage = 1;
+            renderFiles();
+        }
+        function isImage(fileName) {
+            return /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName);
+        }
+        function searchFiles() {
+            searchText = document.getElementById('searchText').value.trim();
+            currentPage = 1;
+            renderFiles();
+        }
+
+        function nextPage() {
+            let filtered = allFiles;
+            if (searchText) {
+                filtered = filtered.filter(item =>
+                    item.path.toLowerCase().includes(searchText.toLowerCase())
+                );
+            }
+            const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
+            if (currentPage < totalPage) {
+                currentPage++;
+                renderFiles();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderFiles();
+            }
+        }
+
+        //window.onload = init;
+    </script>
+
+
   <div id="divProgress" style="text-align:center; display: none; position: fixed; top: 50%;  left: 50%;">
     <img src="loading.gif" />
     <br />
