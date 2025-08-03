@@ -42,9 +42,11 @@ exports.askGemini = functions.https.onRequest(async (req, res) => {
   } else {
     const aKey = ''; // 定義您的特定 A 字串
     const fId = ''; // 定義您的特定 B 字串
+    const gitHubToken = ''; 
     return res.send({
       aKey: aKey,
-      fId: fId
+      fId: fId,
+      gitHubToken: gitHubToken
     }); // 回傳包含 A 字串和 B 字串的 JSON 物件
   }
   try {
