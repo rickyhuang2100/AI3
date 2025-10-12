@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>啟動前置鏡頭</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #f0f0f0; }
+        h1 { color: #333; }
+        #camera-container {
+            margin: 20px auto;
+            border: 8px solid #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            max-width: 95%;
+            width: 500px; /* 在桌機上的最大寬度 */
+            overflow: hidden;
+        }
+        /* 讓 video 填滿容器，並水平翻轉 (前鏡頭通常是鏡像) */
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            transform: scaleX(-1);
+        }
+        #status { margin-top: 15px; font-weight: bold; color: #555; }
+    </style>
+</head>
+<body>
+
+    <h1>指定使用手機前鏡頭</h1>
+    <div id="camera-container">
+        <video id="myCamera" autoplay playsinline></video>
+    </div>
+    <p id="status">正在請求相機權限...</p>
+
+    <script>
+        const videoElement = document.getElementById('myCamera');
+        const statusElement = document.getElementById('status');
+
+        const constraints = {
+            audio: false,
+            video: { 
+                // 核心設定
+                facingMode: 'user' 
+            }
+        };
+
+        async function startFrontCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+                statusElement.textContent = "前鏡頭已啟動！";
+            } catch (error) {
+                console.error("無法啟動相機:", error);
+                statusElement.textContent = `錯誤：${error.name}。請確認已授權並使用 HTTPS。`;
+            }
+        }
+
+        startFrontCamera();
+    </script>
+
+</body>
+</html>
