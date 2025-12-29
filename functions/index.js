@@ -32,7 +32,7 @@ exports.askGemini = functions.https.onRequest(async (req, res) => {
     //const aKey = functions.config().service.akey; // 定義您的特定 A 字串
     
     //ANCHOR[id=ric25051810] fId 資料夾ID
-    const fId = "1WVwwzNv6bckdnKtiRK_qU9zTL5y5pVSy";
+    const fId = "1kAqVAwIzXcTrwYVDnHaU7It9mraOj6Rz";
     //const fId = functions.config().service.fid; // 定義您的特定 B 字串
     return res.send({
       aKey: aKey,
