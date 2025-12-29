@@ -153,7 +153,7 @@
       padding: 10px;
       /* Add padding to messageInput textarea */
     }
-
+ 
     #userQuestion {
       padding: 10px;
       /* Add padding to userQuestion textarea */
@@ -468,6 +468,69 @@
     });
 
 
+
+    async function fetchFiles() {
+    // 1. 設定分支名稱 (通常是 'main' 或 'master')
+    const branch = 'main'; 
+    
+    // 2. 改用 git/trees API，並加上 recursive=1
+    const url = `https://api.github.com/repos/${OWNER}/${REPO}/git/trees/${branch}?recursive=1`;
+    
+    const headers = {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'User-Agent': 'Mozilla/5.0'
+    };
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+        alert('GitHub API 錯誤');
+        return [];
+    }
+
+    const data = await response.json();
+    
+    // Trees API 的檔案列表在 data.tree 裡面
+    let items = data.tree;
+
+    // 3. 過濾資料
+    // 注意：Trees API 回傳的 item.path 是「完整路徑」 (例如 "folder/20231001.md")
+    // 所以我們要確認它是否以你的 PATH 開頭
+    items = items.filter(item => 
+        item.path.startsWith(PATH) && // 篩選特定資料夾
+        item.type === 'blob' &&       // blob 代表檔案 (Tree API 不用 'file' 這個字)
+        !item.path.includes('2Hjd9_IMG') && 
+        !item.path.includes('1.1 system of linear equations')
+    );
+
+    // 4. 依檔名（yyyyMMddHHmmss）降冪排序
+    // 邏輯保持不變，但建議優化一下 Date Parsing 的安全性
+    items.sort((a, b) => {
+        const getDate = (item) => {
+            // 從完整路徑中取出檔名
+            const fileName = item.path.split('/').pop().split('.').shift();
+            
+            // 嘗試解析日期
+            // 格式: yyyyMMddHHmmss -> yyyy-MM-ddTHH:mm:ssZ
+            const formattedDateString = fileName.replace(
+                /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,
+                '$1-$2-$3T$4:$5:$6Z'
+            );
+            
+            const dt = Date.parse(formattedDateString);
+            return isNaN(dt) ? 0 : dt;
+        };
+        
+        // 降冪排序：時間大的在前面
+        return getDate(b) - getDate(a) || b.path.localeCompare(a.path);
+    });
+
+    // 可以在這裡 slice 取出你要的數量，例如前 50 筆
+    // return items.slice(0, 50); 
+    
+    return items;
+}
+/*
     async function fetchFiles() {
       const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
       const headers = {
@@ -503,7 +566,7 @@
       });
 
       return items;
-    }
+    }*/
 
     function renderFiles() {
       let filtered = allFiles;
