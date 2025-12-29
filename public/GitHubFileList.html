@@ -521,7 +521,13 @@
         item.path.startsWith(PATH) && // 篩選特定資料夾
         item.type === 'blob' && // blob 代表檔案 (Tree API 不用 'file' 這個字)
         !item.path.includes('2Hjd9_IMG') &&
-        !item.path.includes('1.1 system of linear equations')
+        !item.path.includes('1.1 system of linear equations') &&
+        !item.path.includes('97360BA9-0404-4EBC-8DB2-F5EDF1BF8272.jpg') &&
+        !item.path.includes('97360BA9-0404-4EBC-8DB2-F5EDF1BF8272.jpg') &&
+        !item.path.includes('7-11.png') &&
+        !item.path.includes('58e8487afebfc1dd.gif') &&
+        !item.path.includes('58A927C9-30D0-4B0B-87DE-00B50C1408C0.jpg') &&
+        !item.path.includes('531F47B2-2406-4397-864B-17D902AC5047.jpg')
       );
 
       // 4. 依檔名（yyyyMMddHHmmss）降冪排序
