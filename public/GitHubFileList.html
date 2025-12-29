@@ -567,7 +567,7 @@
 
       return items;
     }*/
-
+/*
     function renderFiles() {
       let filtered = allFiles;
       if (searchText) {
@@ -614,6 +614,59 @@
         `第 ${currentPage} 頁 / 共 ${totalPage} 頁 (${filtered.length} 筆)`;
       HideProgressBar();
     }
+*/
+
+    function renderFiles() {
+  let filtered = allFiles;
+  if (searchText) {
+    filtered = filtered.filter(item =>
+      item.path.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }
+  const totalPage = Math.ceil(filtered.length / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const paged = filtered.slice(start, start + PAGE_SIZE);
+
+  const tbody = document.getElementById('fileList');
+  tbody.innerHTML = '';
+  imageUrls = []; 
+  currentImageIndex = -1; 
+  mainImage.style.display = 'none'; 
+  prevImageBtn.disabled = true; 
+  nextImageBtn.disabled = true; 
+
+  paged.forEach((item, index) => { 
+    const fileName = item.path.split('/').pop();
+    const tr = document.createElement('tr');
+
+    // ★★★ 修正重點：自行組裝 download_url ★★★
+    // 注意：item.path 在 Tree API 中是完整路徑，不需要再額外串接資料夾
+    // 請確保這裡的 OWNER, REPO, BRANCH 變數是正確的
+    const downloadUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${encodeURIComponent(item.path)}`;
+    
+    // 如果你的分支不是 main，請把上面的 'main' 改成你的分支名稱 (例如 'master')
+    // 使用 encodeURIComponent 是為了處理檔名中有空格或特殊字元的情況
+
+    let previewHtml = fileName; 
+
+    if (isImage(fileName)) {
+      imageUrls.push(downloadUrl); // 使用組裝好的網址
+      
+      previewHtml = `<img src="${downloadUrl}" alt="${fileName}" style="max-width:200px;max-height:200px;cursor:pointer;" onclick="displayImage(${imageUrls.length - 1})">`;
+    }
+
+    tr.innerHTML = `
+      <td>${previewHtml}</td>
+      <td>${fileName}</td>
+      <td><a href="${downloadUrl}" target="_blank">下載</a></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('pageInfo').textContent =
+    `第 ${currentPage} 頁 / 共 ${totalPage} 頁 (${filtered.length} 筆)`;
+  HideProgressBar();
+  }
 
     async function init() {
       allFiles = await fetchFiles();
