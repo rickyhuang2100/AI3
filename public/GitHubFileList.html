@@ -504,6 +504,32 @@
     );
 
     // 4. 依檔名（yyyyMMddHHmmss）降冪排序
+      items.sort((a, b) => {
+        const getTimestampStr = (item) => {
+          // 取得檔名 (去除路徑與副檔名)
+          const fileName = item.path.split('/').pop().split('.').shift();
+          
+          // 使用 Regex 抓取開頭的數字串
+          // ^(\d+) 表示：開頭必須是連續數字
+          const match = fileName.match(/^(\d+)/);
+          
+          // 如果抓得到數字就回傳該字串，抓不到就回傳 "0" (讓它排在最後面)
+          return match ? match[1] : "0";
+        };
+
+        const strA = getTimestampStr(a);
+        const strB = getTimestampStr(b);
+
+        // 字串直接比對 (因為 2025... 一定大於 2024...)
+        // 如果 strB 大於 strA，回傳正數，讓 B 排在前面 (降冪)
+        if (strB > strA) return 1;
+        if (strB < strA) return -1;
+
+        // 如果時間一樣，則比較完整路徑
+        return b.path.localeCompare(a.path);
+      });
+    /*
+    // 4. 依檔名（yyyyMMddHHmmss）降冪排序
     // 邏輯保持不變，但建議優化一下 Date Parsing 的安全性
     items.sort((a, b) => {
         const getDate = (item) => {
@@ -523,7 +549,7 @@
         
         // 降冪排序：時間大的在前面
         return getDate(b) - getDate(a) || b.path.localeCompare(a.path);
-    });
+    });*/
 
     // 可以在這裡 slice 取出你要的數量，例如前 50 筆
     // return items.slice(0, 50); 
