@@ -1,6 +1,7 @@
 {
-    "IDX.aI.enableInlineCompletion": true,
-    "IDX.aI.enableCodebaseIndexing": true,
-    "hediet.vscode-drawio.codeLinkActivated": false,
-    "workbench.editor.wrapTabs": true
+  "IDX.aI.enableInlineCompletion": true,
+  "IDX.aI.enableCodebaseIndexing": true,
+  "hediet.vscode-drawio.codeLinkActivated": false,
+  "workbench.editor.wrapTabs": true,
+  "workbench.startupEditor": "readme"
 }
