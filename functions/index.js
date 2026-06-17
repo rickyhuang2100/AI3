@@ -21,13 +21,13 @@ exports.askGemini = functions.https.onRequest(async (req, res) => {
 
   if (!text) return res.status(400).send('缺少 text 參數');
 
-  const specificAccountEmail = process.env.GEMAIL.toString('utf8'); // 替換為您要判斷的特定電子郵件地址
+  const specificAccountEmail = process.env.GEMAIL.toString('utf8'); // 替換為您要判斷的特定電子郵件地址//TODO://ANCHOR[id=ric26010713] GEMAIL 
 
-  if (googleAccount.email.toLowerCase() === specificAccountEmail.toLowerCase()) {
+  if (googleAccount.email.toLowerCase() === specificAccountEmail.toLowerCase()) { //TODO://ANCHOR[id=ric26010714] 是否為特定email 
     // 如果是特定帳號，回傳特定的 A 字串和 B 字串
     //ANCHOR[id=ric25051809] aKey API Key
     const aKey = Buffer.from(process.env.AKEY, 'base64').toString('utf8');
-    const gitHubToken = Buffer.from(process.env.GITHUBTOKEN, 'base64').toString('utf8');
+    const gitHubToken = Buffer.from(process.env.GITHUBTOKEN, 'base64').toString('utf8'); //TODO://ANCHOR[id=ric26010712] GITHUBTOKEN 
     //const aKey = Buffer.from(functions.config().service.akey, 'base64').toString('utf8');
     //const aKey = functions.config().service.akey; // 定義您的特定 A 字串
     
